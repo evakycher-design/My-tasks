@@ -1,1 +1,797 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ Task Master</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g1: #ff6b6b; --g2: #ffd93d; --g3: #6bcb77; --g4: #4d96ff; --g5: #c77dff;
+  --bg: #0d0d1a;
+  --card: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --card-hover: rgba(255,255,255,0.07);
+  --text: #f0f0ff;
+  --dim: rgba(240,240,255,0.45);
+  --muted: rgba(240,240,255,0.18);
+  --high: #ff6b6b; --med: #ffd93d; --low: #6bcb77;
+  --r: 18px; --r-sm: 12px; --r-xs: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
+.bg-mesh {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(255,107,107,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 10%, rgba(77,150,255,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 70% 80%, rgba(199,125,255,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(107,203,119,0.08) 0%, transparent 60%);
+  animation: meshMove 12s ease-in-out infinite alternate;
+}
+@keyframes meshMove {
+  from { transform: scale(1) rotate(0deg); }
+  to   { transform: scale(1.05) rotate(1deg); }
+}
+
+.wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 28px 20px 100px; }
+
+.header {
+  display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start;
+  margin-bottom: 28px;
+  animation: fadeUp .5s both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+.logo {
+  font-size: 30px; font-weight: 900; line-height: 1; letter-spacing: -1.5px;
+  background: linear-gradient(120deg, var(--g1), var(--g2), var(--g3), var(--g4));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  background-size: 300%; animation: gradShift 5s ease infinite alternate;
+}
+@keyframes gradShift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+.logo-sub { font-size: 12px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; font-weight: 500; }
+
+.tg-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 100px; padding: 10px 18px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+}
+.tg-pill:hover { background: var(--card-hover); border-color: rgba(255,255,255,0.15); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--high); transition: background .3s; }
+.dot.on { background: var(--low); animation: glow 2s infinite; }
+@keyframes glow { 0%,100%{ box-shadow:0 0 0 0 rgba(107,203,119,.5); } 50%{ box-shadow:0 0 0 6px rgba(107,203,119,0); } }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+  margin-bottom: 16px; animation: fadeUp .5s .08s both;
+}
+.stat {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: var(--r); padding: 20px 18px;
+  position: relative; overflow: hidden;
+  transition: transform .2s, border-color .2s;
+}
+.stat:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.14); }
+.stat::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: var(--bar-color, linear-gradient(90deg, var(--g4), var(--g5)));
+}
+.stat.s-all  { --bar-color: linear-gradient(90deg, var(--g4), var(--g5)); }
+.stat.s-done { --bar-color: linear-gradient(90deg, var(--g3), var(--g2)); }
+.stat.s-left { --bar-color: linear-gradient(90deg, var(--g1), var(--g2)); }
+.stat.s-pct  { --bar-color: linear-gradient(90deg, var(--g2), var(--g1)); }
+.stat-n {
+  font-size: 38px; font-weight: 900; line-height: 1;
+  background: var(--bar-color); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat-l { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); margin-top: 6px; }
+
+.prog-card {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: var(--r); padding: 20px 22px;
+  margin-bottom: 20px; animation: fadeUp .5s .12s both;
+}
+.prog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.prog-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+.prog-num { font-size: 22px; font-weight: 900;
+  background: linear-gradient(90deg,var(--g2),var(--g1));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.prog-track { height: 8px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
+.prog-fill {
+  height: 100%; border-radius: 100px;
+  background: linear-gradient(90deg, var(--g5), var(--g4), var(--g3), var(--g2));
+  background-size: 300%;
+  transition: width .7s cubic-bezier(.23,1,.32,1);
+  animation: gradShift 3s ease infinite alternate;
+  position: relative;
+}
+.prog-fill::after {
+  content:''; position:absolute; right:0; top:0; bottom:0; width:40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35));
+  animation: sweep 1.5s ease-in-out infinite;
+}
+@keyframes sweep { 0%,100%{opacity:0} 50%{opacity:1} }
+
+.main-grid {
+  display: grid; grid-template-columns: 1fr 340px; gap: 16px;
+  animation: fadeUp .5s .16s both;
+}
+@media(max-width:720px){ .main-grid{ grid-template-columns:1fr; } }
+
+.section-card {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: var(--r); overflow: hidden;
+}
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--card-border);
+}
+.section-title {
+  font-size: 13px; font-weight: 800; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.section-badge {
+  font-size: 11px; font-weight: 700;
+  background: rgba(255,255,255,0.08); border-radius: 100px;
+  padding: 2px 10px; color: var(--dim);
+}
+
+.add-bar { display: flex; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--card-border); }
+.add-input {
+  flex:1; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+  border-radius: var(--r-xs); padding: 10px 14px; color: var(--text);
+  font-family: 'Manrope',sans-serif; font-size: 13px; outline: none; transition: border-color .2s;
+}
+.add-input::placeholder { color: var(--muted); }
+.add-input:focus { border-color: rgba(255,255,255,0.22); }
+.add-time {
+  background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+  border-radius: var(--r-xs); padding: 10px 8px; color: var(--text);
+  font-family: 'Manrope',sans-serif; font-size: 13px; outline: none; width: 96px;
+}
+.add-sel {
+  background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+  border-radius: var(--r-xs); padding: 10px 8px; color: var(--text);
+  font-family:'Manrope',sans-serif; font-size:12px; outline:none; cursor:pointer;
+}
+.add-sel option { background: #1a1a2e; }
+.btn-plus {
+  background: linear-gradient(135deg,var(--g4),var(--g5));
+  border: none; border-radius: var(--r-xs); padding: 10px 16px;
+  color: white; font-weight: 800; font-size: 18px; cursor: pointer;
+  transition: all .2s; line-height:1;
+}
+.btn-plus:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(77,150,255,.35); }
+
+.tasks-body { padding: 8px; max-height: 520px; overflow-y: auto; }
+.tasks-body::-webkit-scrollbar { width: 3px; }
+.tasks-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius:100px; }
+
+.tgroup-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); padding: 10px 10px 6px;
+}
+.task-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 12px; border-radius: 12px;
+  transition: all .2s; position: relative; margin-bottom: 2px;
+}
+.task-row:hover { background: rgba(255,255,255,0.05); }
+.task-row.done .task-txt { text-decoration: line-through; color: var(--muted); }
+.task-row.done { opacity: .65; }
+.task-row::before {
+  content:''; width:3px; height:60%; border-radius:4px; flex-shrink:0;
+  background: rgba(255,255,255,.12);
+}
+.task-row.p-high::before { background: var(--high); }
+.task-row.p-med::before  { background: var(--med); }
+.task-row.p-low::before  { background: var(--low); }
+
+.cb { position:relative; flex-shrink:0; }
+.cb input { position:absolute; opacity:0; width:0; height:0; }
+.cb-box {
+  width:22px; height:22px; border-radius:7px; border:2px solid rgba(255,255,255,.14);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .2s;
+}
+.cb-box:hover { border-color: var(--g3); }
+.cb input:checked ~ .cb-box {
+  background: linear-gradient(135deg,var(--g3),var(--g2));
+  border-color: transparent;
+  animation: pop .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop { 0%{transform:scale(.7)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.cb-box::after {
+  content:''; width:5px; height:9px;
+  border-right:2px solid #0d0d1a; border-bottom:2px solid #0d0d1a;
+  transform: rotate(45deg) translate(-1px,-1px); opacity:0; transition:opacity .15s;
+}
+.cb input:checked ~ .cb-box::after { opacity:1; }
+
+.task-body { flex:1; min-width:0; }
+.task-txt { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.task-meta-row { display:flex; gap:6px; align-items:center; margin-top:3px; }
+.task-time-tag { font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; }
+.chip {
+  font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;
+  padding:2px 8px; border-radius:100px;
+}
+.chip.high { background:rgba(255,107,107,.15); color:var(--high); }
+.chip.med  { background:rgba(255,217,61,.15); color:var(--med); }
+.chip.low  { background:rgba(107,203,119,.15); color:var(--low); }
+.chip.done-chip { background:rgba(107,203,119,.1); color:var(--low); }
+
+.task-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:4px; border-radius:6px; transition:all .2s; flex-shrink:0; }
+.task-del:hover { color:var(--high); background:rgba(255,107,107,.12); }
+
+.right-col { display:flex; flex-direction:column; gap:16px; }
+
+.all-tasks-body { padding:8px; max-height: 260px; overflow-y:auto; }
+.all-tasks-body::-webkit-scrollbar { width:3px; }
+.all-tasks-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:100px; }
+
+.habits-body { padding:10px; }
+.habit-item {
+  display:grid; grid-template-columns:26px 1fr auto;
+  align-items:center; gap:10px; padding:9px 8px;
+  border-radius:10px; transition:background .2s;
+}
+.habit-item:hover { background:rgba(255,255,255,.04); }
+.habit-emoji { font-size:17px; text-align:center; }
+.habit-info { min-width:0; }
+.habit-name { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.habit-prog { font-size:10px; color:var(--dim); margin-top:1px; }
+.habit-days { display:flex; gap:3px; }
+.hday {
+  width:24px; height:24px; border-radius:6px; border:1.5px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:8px; font-weight:800; color:var(--muted); transition:all .2s;
+}
+.hday:hover { border-color:var(--g3); color:var(--g3); }
+.hday.on { background:linear-gradient(135deg,rgba(107,203,119,.25),rgba(255,217,61,.15)); border-color:rgba(107,203,119,.5); color:var(--g3); font-size:11px; }
+
+.tg-panel-body { padding:16px; }
+.tg-tabs { display:flex; gap:4px; background:rgba(255,255,255,.05); border-radius:100px; padding:3px; margin-bottom:16px; }
+.tg-tab { flex:1; text-align:center; padding:8px; border-radius:100px; font-size:11px; font-weight:700; cursor:pointer; color:var(--dim); border:none; background:none; transition:all .25s; }
+.tg-tab.a { background:linear-gradient(135deg,var(--g4),var(--g5)); color:white; }
+.tg-sub { display:none; }
+.tg-sub.a { display:block; animation:fadeUp .3s both; }
+
+.tg-field { margin-bottom:10px; }
+.tg-field label { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); display:block; margin-bottom:5px; }
+.tg-inp {
+  width:100%; background:rgba(255,255,255,.06); border:1px solid var(--card-border);
+  border-radius:var(--r-xs); padding:10px 14px; color:var(--text);
+  font-family:'Manrope',sans-serif; font-size:13px; outline:none; transition:border-color .2s;
+}
+.tg-inp:focus { border-color:rgba(255,255,255,.25); }
+.tg-inp::placeholder { color:var(--muted); }
+
+.btn-tg {
+  width:100%; padding:12px; border:none; border-radius:var(--r-xs);
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:800; cursor:pointer;
+  transition:all .2s; margin-top:4px;
+}
+.btn-bot { background:linear-gradient(135deg,var(--g4),var(--g5)); color:white; }
+.btn-mini { background:linear-gradient(135deg,var(--g1),var(--g2)); color:#0d0d1a; }
+.btn-tg:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
+
+.steps-mini { list-style:none; counter-reset:s; margin-top:14px; }
+.steps-mini li {
+  counter-increment:s; padding:10px 0 10px 38px; position:relative;
+  font-size:12px; color:var(--dim); line-height:1.6;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.steps-mini li:last-child { border-bottom:none; }
+.steps-mini li::before {
+  content:counter(s); position:absolute; left:0; top:10px;
+  width:24px; height:24px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:800; color:var(--g4);
+  border:1px solid rgba(77,150,255,.25);
+  background:rgba(77,150,255,.08);
+}
+.steps-mini li b { color:var(--text); }
+code { font-family:'JetBrains Mono',monospace; font-size:11px; background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; color:#ffd93d; }
+
+.cmds { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
+.cmd { background:rgba(255,255,255,.05); border:1px solid var(--card-border); border-radius:var(--r-xs); padding:10px; }
+.cmd code { font-size:12px; color:var(--g4); background:none; padding:0; }
+.cmd p { font-size:11px; color:var(--dim); margin-top:3px; }
+
+.copy-block {
+  background:rgba(0,0,0,.35); border:1px solid var(--card-border); border-radius:var(--r-xs);
+  padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--dim);
+  line-height:1.9; overflow-x:auto; margin-top:10px; position:relative; white-space:pre;
+}
+.copy-btn {
+  position:absolute; top:8px; right:8px; background:rgba(255,255,255,.1); border:none;
+  border-radius:6px; padding:4px 10px; color:var(--dim); font-size:10px; cursor:pointer; transition:all .2s;
+}
+.copy-btn:hover { background:rgba(255,255,255,.18); color:var(--text); }
+
+.info-box {
+  background:rgba(255,217,61,.07); border:1px solid rgba(255,217,61,.18);
+  border-radius:10px; padding:12px; font-size:12px; color:var(--dim); line-height:1.7; margin-top:12px;
+}
+.info-box b { color:var(--text); }
+
+.empty-state { text-align:center; padding:36px 20px; color:var(--muted); font-size:13px; }
+.empty-state i { font-size:30px; display:block; margin-bottom:10px; }
+
+.cf { position:fixed; pointer-events:none; z-index:9999; border-radius:3px; animation:fall 1.8s ease-in forwards; }
+@keyframes fall { 0%{opacity:1;transform:translateY(-10px) rotate(0deg)} 100%{opacity:0;transform:translateY(100vh) rotate(900deg)} }
+
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+  background:rgba(15,15,30,.96); border:1px solid rgba(255,255,255,.12); border-radius:100px;
+  padding:12px 24px; font-size:13px; font-weight:700; color:var(--text);
+  backdrop-filter:blur(20px); transition:transform .35s cubic-bezier(.23,1,.32,1);
+  z-index:10000; white-space:nowrap;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+@media(max-width:500px){
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .add-bar{flex-wrap:wrap;}
+  .add-time{width:80px;}
+  .logo{font-size:22px;}
+}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <div class="logo">✦ TASK MASTER</div>
+      <div class="logo-sub" id="hdrDate"></div>
+    </div>
+    <div class="tg-pill" id="tgPill" onclick="scrollToTg()">
+      <div class="dot" id="tgDot"></div>
+      <span id="tgLabel">Telegram</span>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat s-all"><div class="stat-n" id="sAll">0</div><div class="stat-l">Всього тасків</div></div>
+    <div class="stat s-done"><div class="stat-n" id="sDone">0</div><div class="stat-l">Виконано ✓</div></div>
+    <div class="stat s-left"><div class="stat-n" id="sLeft">0</div><div class="stat-l">Залишилось</div></div>
+    <div class="stat s-pct"><div class="stat-n" id="sPct">0%</div><div class="stat-l">Прогрес дня</div></div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <span class="prog-label">Денний прогрес</span>
+      <span class="prog-num" id="progNum">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: TODAY -->
+    <div>
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">📅 Сьогодні <span class="section-badge" id="todayCount">0</span></div>
+        </div>
+        <div class="add-bar">
+          <input class="add-input" id="inp" placeholder="Додати таск…" onkeydown="if(event.key==='Enter')addTask()">
+          <input class="add-time" type="time" id="ttime">
+          <select class="add-sel" id="tpri">
+            <option value="high">🔴</option>
+            <option value="med" selected>🟠</option>
+            <option value="low">🟢</option>
+          </select>
+          <button class="btn-plus" onclick="addTask()">+</button>
+        </div>
+        <div class="tasks-body" id="todayList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">📋 Всі таски <span class="section-badge" id="allCount">0</span></div>
+        </div>
+        <div class="add-bar">
+          <input class="add-input" id="inpAll" placeholder="Новий таск…" onkeydown="if(event.key==='Enter')addTask('all')">
+          <select class="add-sel" id="priAll">
+            <option value="high">🔴</option>
+            <option value="med" selected>🟠</option>
+            <option value="low">🟢</option>
+          </select>
+          <button class="btn-plus" onclick="addTask('all')">+</button>
+        </div>
+        <div class="all-tasks-body" id="allList"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">💪 Звички тижня</div>
+        </div>
+        <div class="habits-body" id="habitsBody"></div>
+      </div>
+
+      <div class="section-card" id="tgSection">
+        <div class="section-head">
+          <div class="section-title">🤖 Telegram інтеграція</div>
+        </div>
+        <div class="tg-panel-body">
+          <div class="tg-tabs">
+            <button class="tg-tab a" onclick="tgTab('bot',this)">🤖 Бот (команди)</button>
+            <button class="tg-tab" onclick="tgTab('mini',this)">📱 Mini App</button>
+          </div>
+
+          <div class="tg-sub a" id="sub-bot">
+            <div class="tg-field">
+              <label>Bot Token (від @BotFather)</label>
+              <input class="tg-inp" id="botToken" type="password" placeholder="123456:ABC-DEF…">
+            </div>
+            <div class="tg-field">
+              <label>Твій Chat ID</label>
+              <input class="tg-inp" id="chatId" placeholder="123456789" type="number">
+            </div>
+            <button class="btn-tg btn-bot" onclick="connectBot()">🔗 Зберегти та підключити</button>
+
+            <ol class="steps-mini">
+              <li>Знайди <b>@BotFather</b> → <code>/newbot</code> → скопіюй токен</li>
+              <li>Напиши своєму боту будь-яке повідомлення</li>
+              <li>Відкрий: <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> → знайди <code>"id"</code></li>
+              <li>Задеплой сервер нижче на <b>Render.com</b> і встанови webhook</li>
+            </ol>
+
+            <div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Команди бота</div>
+            <div class="cmds">
+              <div class="cmd"><code>/tasks</code><p>Всі таски зі статусом</p></div>
+              <div class="cmd"><code>/done 2</code><p>Відмітити таск #2 ✅</p></div>
+              <div class="cmd"><code>/today</code><p>Таски на сьогодні</p></div>
+              <div class="cmd"><code>/add Назва</code><p>Додати новий таск</p></div>
+              <div class="cmd"><code>/progress</code><p>% виконання за день</p></div>
+              <div class="cmd"><code>/habits</code><p>Трекер звичок</p></div>
+            </div>
+
+            <div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Node.js сервер → Render.com</div>
+            <div class="copy-block" id="codeBot"><button class="copy-btn" onclick="copyBot()">Копіювати</button><span style="color:#c77dff">const</span> express = require(<span style="color:#ffd93d">'express'</span>);
+<span style="color:#c77dff">const</span> fetch = require(<span style="color:#ffd93d">'node-fetch'</span>);
+<span style="color:#c77dff">const</span> app = express();
+app.use(express.json());
+<span style="color:#c77dff">const</span> TOKEN = process.env.BOT_TOKEN;
+<span style="color:#c77dff">let</span> tasks = [];
+
+<span style="color:#c77dff">async function</span> <span style="color:#6bcb77">send</span>(id, text) {
+  await fetch(<span style="color:#ffd93d">`https://api.telegram.org/bot${TOKEN}/sendMessage`</span>,
+  { method:<span style="color:#ffd93d">'POST'</span>,
+    headers:{<span style="color:#ffd93d">'Content-Type'</span>:<span style="color:#ffd93d">'application/json'</span>},
+    body:JSON.stringify({chat_id:id,text,parse_mode:<span style="color:#ffd93d">'HTML'</span>})});
+}
+
+app.post(<span style="color:#ffd93d">'/webhook'</span>, async (req, res) => {
+  <span style="color:#c77dff">const</span> msg = req.body.message;
+  <span style="color:#c77dff">if</span>(!msg) return res.json({ok:<span style="color:#6bcb77">true</span>});
+  <span style="color:#c77dff">const</span> [cmd,...a] = msg.text.split(<span style="color:#ffd93d">' '</span>);
+  <span style="color:#c77dff">if</span>(cmd===<span style="color:#ffd93d">'/tasks'</span>)
+    await send(msg.chat.id, tasks.map((t,i)=>
+      <span style="color:#ffd93d">`${t.done?'✅':'⬜'} ${i+1}. &lt;b&gt;${t.text}&lt;/b&gt;`</span>
+    ).join(<span style="color:#ffd93d">'\n'</span>) || <span style="color:#ffd93d">'Тасків немає!'</span>);
+  <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/done'</span> && tasks[+a[0]-1]) {
+    tasks[+a[0]-1].done = <span style="color:#6bcb77">true</span>;
+    await send(msg.chat.id, <span style="color:#ffd93d">`✅ Таск "${tasks[+a[0]-1].text}" виконано!`</span>);
+  } <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/add'</span>) {
+    tasks.push({text:a.join(<span style="color:#ffd93d">' '</span>),done:<span style="color:#ff6b6b">false</span>});
+    await send(msg.chat.id,<span style="color:#ffd93d">'➕ Таск додано!'</span>);
+  } <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/progress'</span>) {
+    <span style="color:#c77dff">const</span> d=tasks.filter(t=>t.done).length;
+    await send(msg.chat.id,
+      <span style="color:#ffd93d">`📊 ${d}/${tasks.length} (${Math.round(d/tasks.length*100)||0}%)`</span>);
+  }
+  res.json({ok:<span style="color:#6bcb77">true</span>});
+});
+app.listen(<span style="color:#4d96ff">3000</span>);</div>
+          </div>
+
+          <div class="tg-sub" id="sub-mini">
+            <div class="tg-field">
+              <label>Bot Token</label>
+              <input class="tg-inp" id="miniToken" type="password" placeholder="123456:ABC-DEF…">
+            </div>
+            <button class="btn-tg btn-mini" onclick="connectMini()">📱 Налаштувати Mini App</button>
+
+            <ol class="steps-mini">
+              <li>Збережи цей HTML на <b>GitHub Pages</b> або <b>Vercel</b> — отримаєш HTTPS-посилання</li>
+              <li>В @BotFather: <code>/mybots</code> → твій бот → <b>Bot Settings → Menu Button</b></li>
+              <li>Вставте своє HTTPS-посилання на цей трекер</li>
+              <li>Тепер кнопка «Menu» відкриє трекер прямо в Telegram! ✨</li>
+            </ol>
+
+            <div class="info-box">
+              💡 <b>Що таке Mini App?</b><br>
+              Повноцінний веб-додаток всередині Telegram. Відкриваєш чат → тиснеш кнопку → цей трекер з кнопками і чекбоксами відкривається прямо в Telegram без виходу з нього!
+            </div>
+
+            <div style="margin-top:12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Telegram WebApp SDK</div>
+            <div class="copy-block"><button class="copy-btn" onclick="copySdk()">Копіювати</button><span style="color:#555">&lt;!-- В &lt;head&gt; вставити: --&gt;</span>
+&lt;<span style="color:#6bcb77">script</span> src=<span style="color:#ffd93d">"https://telegram.org/js/telegram-web-app.js"</span>&gt;&lt;/<span style="color:#6bcb77">script</span>&gt;
+
+<span style="color:#555">// Ініціалізація:</span>
+<span style="color:#c77dff">const</span> tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand(); <span style="color:#555">// розгорнути на весь екран</span>
+
+<span style="color:#555">// Дані юзера:</span>
+<span style="color:#c77dff">const</span> user = tg.initDataUnsafe?.user;
+<span style="color:#555">// user.id, user.first_name, user.username</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+
+let S = {
+  tasks: [],
+  habits: [
+    {n:'Ранкова йога',e:'🧘',g:7,d:[0,0,0,0,0,0,0]},
+    {n:'Читати 20 сторінок',e:'📚',g:7,d:[0,0,0,0,0,0,0]},
+    {n:'Тренування',e:'🏋️',g:5,d:[0,0,0,0,0,0,0]},
+    {n:'Випити 2л води',e:'💧',g:7,d:[0,0,0,0,0,0,0]},
+    {n:'Медитація',e:'🌿',g:7,d:[0,0,0,0,0,0,0]},
+    {n:'Без соцмереж до 10:00',e:'📵',g:5,d:[0,0,0,0,0,0,0]},
+  ],
+  tg: null,
+};
+
+try { const r = localStorage.getItem('tm2025'); if(r) S = {...S, ...JSON.parse(r)}; } catch(e){}
+function save(){ try{ localStorage.setItem('tm2025', JSON.stringify(S)); }catch(e){} }
+
+// Date
+document.getElementById('hdrDate').textContent =
+  new Date().toLocaleDateString('uk-UA',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+
+// Sample data
+if(!S.tasks || S.tasks.length === 0){
+  S.tasks = [
+    {id:1,text:'Перевірити пошту',priority:'med',time:'08:00',panel:'today',done:true},
+    {id:2,text:'Домашнє завдання з математики',priority:'high',time:'09:00',panel:'today',done:false},
+    {id:3,text:'Робота над груповим проєктом',priority:'med',time:'11:00',panel:'today',done:false},
+    {id:4,text:'Підготовка до Quiz',priority:'high',time:'14:00',panel:'today',done:false},
+    {id:5,text:'Організувати робоче місце',priority:'low',time:'16:00',panel:'today',done:false},
+    {id:6,text:'Прочитати 20 сторінок',priority:'low',time:'21:00',panel:'today',done:false},
+    {id:7,text:'Оновити планнер на тиждень',priority:'med',time:null,panel:'all',done:false},
+    {id:8,text:'Зателефонувати подрузі',priority:'low',time:null,panel:'all',done:false},
+  ];
+  save();
+}
+
+// ADD TASK
+function addTask(panel='today'){
+  const iEl = document.getElementById(panel==='today'?'inp':'inpAll');
+  const text = iEl.value.trim(); if(!text) return;
+  const priority = document.getElementById(panel==='today'?'tpri':'priAll').value;
+  const time = panel==='today' ? (document.getElementById('ttime').value||null) : null;
+  S.tasks.unshift({id:Date.now(),text,priority,time,done:false,panel});
+  save(); iEl.value='';
+  render(); showToast('➕ Таск додано!');
+}
+
+function toggle(id){
+  const t = S.tasks.find(t=>t.id===id); if(!t) return;
+  t.done = !t.done; save();
+  if(t.done){ confetti(); showToast('🎉 Молодець! Виконано!'); }
+  render();
+}
+
+function del(id){
+  S.tasks = S.tasks.filter(t=>t.id!==id); save(); render(); showToast('🗑 Видалено');
+}
+
+function mkTask(t, i){
+  const d = document.createElement('div');
+  d.className = `task-row p-${t.priority}${t.done?' done':''}`;
+  d.style.animationDelay = (i*.04)+'s';
+  d.innerHTML = `
+    <div class="cb">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggle(${t.id})">
+      <div class="cb-box" onclick="this.previousElementSibling.click()"></div>
+    </div>
+    <div class="task-body">
+      <div class="task-txt">${t.text}</div>
+      <div class="task-meta-row">
+        ${t.time?`<span class="task-time-tag">${t.time}</span>`:''}
+        <span class="chip ${t.priority}">${t.priority==='high'?'Важливо':t.priority==='med'?'Середнє':'Легке'}</span>
+        ${t.done?'<span class="chip done-chip">✓ Готово</span>':''}
+      </div>
+    </div>
+    <button class="task-del" onclick="del(${t.id})">✕</button>`;
+  return d;
+}
+
+function render(){
+  // TODAY
+  const te = document.getElementById('todayList');
+  const today = S.tasks.filter(t=>t.panel==='today'||t.time);
+  te.innerHTML='';
+  if(!today.length){
+    te.innerHTML='<div class="empty-state"><i>🌟</i>Додай перший таск!</div>';
+  } else {
+    const wt = today.filter(t=>t.time).sort((a,b)=>a.time.localeCompare(b.time));
+    const nt = today.filter(t=>!t.time);
+    if(wt.length){
+      const l=document.createElement('div'); l.className='tgroup-label'; l.textContent='⏰ По розкладу';
+      te.appendChild(l); wt.forEach((t,i)=>te.appendChild(mkTask(t,i)));
+    }
+    if(nt.length){
+      const l=document.createElement('div'); l.className='tgroup-label'; l.textContent='📌 Без часу';
+      te.appendChild(l); nt.forEach((t,i)=>te.appendChild(mkTask(t,i)));
+    }
+  }
+  document.getElementById('todayCount').textContent = today.length;
+
+  // ALL
+  const ae = document.getElementById('allList');
+  ae.innerHTML='';
+  if(!S.tasks.length){
+    ae.innerHTML='<div class="empty-state"><i>📋</i>Порожньо</div>';
+  } else {
+    S.tasks.forEach((t,i)=>ae.appendChild(mkTask(t,i)));
+  }
+  document.getElementById('allCount').textContent = S.tasks.length;
+
+  // STATS
+  const total = S.tasks.length;
+  const done  = S.tasks.filter(t=>t.done).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('sAll').textContent  = total;
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sLeft').textContent = total-done;
+  document.getElementById('sPct').textContent  = pct+'%';
+  document.getElementById('progNum').textContent = pct+'%';
+  document.getElementById('progFill').style.width = pct+'%';
+}
+
+// HABITS
+function renderHabits(){
+  const el = document.getElementById('habitsBody'); el.innerHTML='';
+  (S.habits||[]).forEach((h,hi)=>{
+    const done = h.d.filter(Boolean).length;
+    const div = document.createElement('div'); div.className='habit-item';
+    div.innerHTML=`
+      <div class="habit-emoji">${h.e}</div>
+      <div class="habit-info">
+        <div class="habit-name">${h.n}</div>
+        <div class="habit-prog">${done}/${h.g} цього тижня</div>
+      </div>
+      <div class="habit-days">
+        ${DAYS.map((d,di)=>`<div class="hday${h.d[di]?' on':''}" onclick="toggleH(${hi},${di})">${h.d[di]?'✓':d}</div>`).join('')}
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function toggleH(hi,di){
+  S.habits[hi].d[di] = S.habits[hi].d[di]?0:1; save(); renderHabits();
+  if(S.habits[hi].d[di]) showToast('🔥 '+S.habits[hi].n);
+}
+
+// TG
+function tgTab(id, btn){
+  document.querySelectorAll('.tg-tab').forEach(t=>t.classList.remove('a'));
+  document.querySelectorAll('.tg-sub').forEach(s=>s.classList.remove('a'));
+  btn.classList.add('a');
+  document.getElementById('sub-'+id).classList.add('a');
+}
+
+function connectBot(){
+  const token = document.getElementById('botToken').value.trim();
+  const chatId = document.getElementById('chatId').value.trim();
+  if(!token||!chatId){ showToast('⚠️ Заповни обидва поля'); return; }
+  S.tg={token,chatId,type:'bot'}; save();
+  document.getElementById('tgDot').classList.add('on');
+  document.getElementById('tgLabel').textContent='Бот підключено ✓';
+  showToast('✅ Токен збережено! Налаштуй webhook.');
+}
+
+function connectMini(){
+  const token = document.getElementById('miniToken').value.trim();
+  if(!token){ showToast('⚠️ Вставте Bot Token'); return; }
+  S.tg={token,type:'mini'}; save();
+  document.getElementById('tgDot').classList.add('on');
+  document.getElementById('tgLabel').textContent='Mini App ✓';
+  showToast('✅ Готово! Завантаж файл і налаштуй Mini App.');
+}
+
+if(S.tg){
+  document.getElementById('tgDot').classList.add('on');
+  document.getElementById('tgLabel').textContent = S.tg.type==='mini'?'Mini App ✓':'Бот підключено ✓';
+}
+
+function scrollToTg(){
+  document.getElementById('tgSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// COPY
+const BOT_CODE = `const express = require('express');
+const fetch = require('node-fetch');
+const app = express();
+app.use(express.json());
+const TOKEN = process.env.BOT_TOKEN;
+let tasks = [];
+
+async function send(id, text) {
+  await fetch(\`https://api.telegram.org/bot\${TOKEN}/sendMessage\`,
+  { method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:id,text,parse_mode:'HTML'})});
+}
+
+app.post('/webhook', async (req, res) => {
+  const msg = req.body.message;
+  if(!msg) return res.json({ok:true});
+  const [cmd,...a] = msg.text.split(' ');
+  if(cmd==='/tasks')
+    await send(msg.chat.id, tasks.map((t,i)=>
+      \`\${t.done?'✅':'⬜'} \${i+1}. <b>\${t.text}</b>\`).join('\\n')||'Тасків немає!');
+  else if(cmd==='/done' && tasks[+a[0]-1]) {
+    tasks[+a[0]-1].done = true;
+    await send(msg.chat.id, \`✅ "\${tasks[+a[0]-1].text}" виконано!\`);
+  } else if(cmd==='/add') {
+    tasks.push({text:a.join(' '),done:false});
+    await send(msg.chat.id,'➕ Таск додано!');
+  } else if(cmd==='/progress') {
+    const d=tasks.filter(t=>t.done).length;
+    await send(msg.chat.id,\`📊 \${d}/\${tasks.length} (\${Math.round(d/tasks.length*100)||0}%)\`);
+  }
+  res.json({ok:true});
+});
+app.listen(3000);`;
+
+function copyBot(){ navigator.clipboard.writeText(BOT_CODE).then(()=>showToast('📋 Код скопійовано!')); }
+function copySdk(){
+  navigator.clipboard.writeText('<script src="https://telegram.org/js/telegram-web-app.js"><\/script>').then(()=>showToast('📋 Скопійовано!'));
+}
+
+// CONFETTI
+function confetti(){
+  const cols=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff','#ff9f43'];
+  for(let i=0;i<24;i++){
+    const el=document.createElement('div'); el.className='cf';
+    el.style.cssText=`left:${15+Math.random()*70}vw;top:0;width:${5+Math.random()*9}px;height:${5+Math.random()*9}px;background:${cols[~~(Math.random()*cols.length)]};animation-duration:${.8+Math.random()*1}s;animation-delay:${Math.random()*.5}s;`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2500);
+  }
+}
+
+let toastT;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+render();
+renderHabits();
+</script>
+</body>
+  </html>
