@@ -349,6 +349,12 @@ code { font-family:'JetBrains Mono',monospace; font-size:11px; background:rgba(2
   .add-time{width:80px;}
   .logo{font-size:22px;}
 }
+
+.date-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.date-btn{width:42px;height:42px;border-radius:14px;border:1px solid var(--card-border);background:rgba(255,255,255,.04);color:var(--text);font-size:20px}
+.date-btn:active{transform:scale(.98)}
+.date-pick{width:1px;height:1px;opacity:0;position:absolute;pointer-events:none}
+.logo-sub{color:var(--dim)}
 </style>
 </head>
 <body>
@@ -358,13 +364,14 @@ code { font-family:'JetBrains Mono',monospace; font-size:11px; background:rgba(2
   <div class="header">
     <div>
       <div class="logo">✦ TASK MASTER</div>
-      <div class="logo-sub" id="hdrDate"></div>
+      <div class="date-row">
+        <button class="date-btn" id="prevDay" aria-label="Попередній день">‹</button>
+        <div class="logo-sub" id="hdrDate"></div>
+        <button class="date-btn" id="nextDay" aria-label="Наступний день">›</button>
+        <input type="date" id="datePick" class="date-pick" aria-label="Вибрати дату">
+      </div>
     </div>
-    <div class="tg-pill" id="tgPill" onclick="scrollToTg()">
-      <div class="dot" id="tgDot"></div>
-      <span id="tgLabel">Telegram</span>
-    </div>
-  </div>
+</div>
 
   <div class="stats-row">
     <div class="stat s-all"><div class="stat-n" id="sAll">0</div><div class="stat-l">Всього тасків</div></div>
@@ -429,116 +436,6 @@ code { font-family:'JetBrains Mono',monospace; font-size:11px; background:rgba(2
         <div class="habits-body" id="habitsBody"></div>
       </div>
 
-      <div class="section-card" id="tgSection">
-        <div class="section-head">
-          <div class="section-title">🤖 Telegram інтеграція</div>
-        </div>
-        <div class="tg-panel-body">
-          <div class="tg-tabs">
-            <button class="tg-tab a" onclick="tgTab('bot',this)">🤖 Бот (команди)</button>
-            <button class="tg-tab" onclick="tgTab('mini',this)">📱 Mini App</button>
-          </div>
-
-          <div class="tg-sub a" id="sub-bot">
-            <div class="tg-field">
-              <label>Bot Token (від @BotFather)</label>
-              <input class="tg-inp" id="botToken" type="password" placeholder="123456:ABC-DEF…">
-            </div>
-            <div class="tg-field">
-              <label>Твій Chat ID</label>
-              <input class="tg-inp" id="chatId" placeholder="123456789" type="number">
-            </div>
-            <button class="btn-tg btn-bot" onclick="connectBot()">🔗 Зберегти та підключити</button>
-
-            <ol class="steps-mini">
-              <li>Знайди <b>@BotFather</b> → <code>/newbot</code> → скопіюй токен</li>
-              <li>Напиши своєму боту будь-яке повідомлення</li>
-              <li>Відкрий: <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> → знайди <code>"id"</code></li>
-              <li>Задеплой сервер нижче на <b>Render.com</b> і встанови webhook</li>
-            </ol>
-
-            <div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Команди бота</div>
-            <div class="cmds">
-              <div class="cmd"><code>/tasks</code><p>Всі таски зі статусом</p></div>
-              <div class="cmd"><code>/done 2</code><p>Відмітити таск #2 ✅</p></div>
-              <div class="cmd"><code>/today</code><p>Таски на сьогодні</p></div>
-              <div class="cmd"><code>/add Назва</code><p>Додати новий таск</p></div>
-              <div class="cmd"><code>/progress</code><p>% виконання за день</p></div>
-              <div class="cmd"><code>/habits</code><p>Трекер звичок</p></div>
-            </div>
-
-            <div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Node.js сервер → Render.com</div>
-            <div class="copy-block" id="codeBot"><button class="copy-btn" onclick="copyBot()">Копіювати</button><span style="color:#c77dff">const</span> express = require(<span style="color:#ffd93d">'express'</span>);
-<span style="color:#c77dff">const</span> fetch = require(<span style="color:#ffd93d">'node-fetch'</span>);
-<span style="color:#c77dff">const</span> app = express();
-app.use(express.json());
-<span style="color:#c77dff">const</span> TOKEN = process.env.BOT_TOKEN;
-<span style="color:#c77dff">let</span> tasks = [];
-
-<span style="color:#c77dff">async function</span> <span style="color:#6bcb77">send</span>(id, text) {
-  await fetch(<span style="color:#ffd93d">`https://api.telegram.org/bot${TOKEN}/sendMessage`</span>,
-  { method:<span style="color:#ffd93d">'POST'</span>,
-    headers:{<span style="color:#ffd93d">'Content-Type'</span>:<span style="color:#ffd93d">'application/json'</span>},
-    body:JSON.stringify({chat_id:id,text,parse_mode:<span style="color:#ffd93d">'HTML'</span>})});
-}
-
-app.post(<span style="color:#ffd93d">'/webhook'</span>, async (req, res) => {
-  <span style="color:#c77dff">const</span> msg = req.body.message;
-  <span style="color:#c77dff">if</span>(!msg) return res.json({ok:<span style="color:#6bcb77">true</span>});
-  <span style="color:#c77dff">const</span> [cmd,...a] = msg.text.split(<span style="color:#ffd93d">' '</span>);
-  <span style="color:#c77dff">if</span>(cmd===<span style="color:#ffd93d">'/tasks'</span>)
-    await send(msg.chat.id, tasks.map((t,i)=>
-      <span style="color:#ffd93d">`${t.done?'✅':'⬜'} ${i+1}. &lt;b&gt;${t.text}&lt;/b&gt;`</span>
-    ).join(<span style="color:#ffd93d">'\n'</span>) || <span style="color:#ffd93d">'Тасків немає!'</span>);
-  <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/done'</span> && tasks[+a[0]-1]) {
-    tasks[+a[0]-1].done = <span style="color:#6bcb77">true</span>;
-    await send(msg.chat.id, <span style="color:#ffd93d">`✅ Таск "${tasks[+a[0]-1].text}" виконано!`</span>);
-  } <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/add'</span>) {
-    tasks.push({text:a.join(<span style="color:#ffd93d">' '</span>),done:<span style="color:#ff6b6b">false</span>});
-    await send(msg.chat.id,<span style="color:#ffd93d">'➕ Таск додано!'</span>);
-  } <span style="color:#c77dff">else if</span>(cmd===<span style="color:#ffd93d">'/progress'</span>) {
-    <span style="color:#c77dff">const</span> d=tasks.filter(t=>t.done).length;
-    await send(msg.chat.id,
-      <span style="color:#ffd93d">`📊 ${d}/${tasks.length} (${Math.round(d/tasks.length*100)||0}%)`</span>);
-  }
-  res.json({ok:<span style="color:#6bcb77">true</span>});
-});
-app.listen(<span style="color:#4d96ff">3000</span>);</div>
-          </div>
-
-          <div class="tg-sub" id="sub-mini">
-            <div class="tg-field">
-              <label>Bot Token</label>
-              <input class="tg-inp" id="miniToken" type="password" placeholder="123456:ABC-DEF…">
-            </div>
-            <button class="btn-tg btn-mini" onclick="connectMini()">📱 Налаштувати Mini App</button>
-
-            <ol class="steps-mini">
-              <li>Збережи цей HTML на <b>GitHub Pages</b> або <b>Vercel</b> — отримаєш HTTPS-посилання</li>
-              <li>В @BotFather: <code>/mybots</code> → твій бот → <b>Bot Settings → Menu Button</b></li>
-              <li>Вставте своє HTTPS-посилання на цей трекер</li>
-              <li>Тепер кнопка «Menu» відкриє трекер прямо в Telegram! ✨</li>
-            </ol>
-
-            <div class="info-box">
-              💡 <b>Що таке Mini App?</b><br>
-              Повноцінний веб-додаток всередині Telegram. Відкриваєш чат → тиснеш кнопку → цей трекер з кнопками і чекбоксами відкривається прямо в Telegram без виходу з нього!
-            </div>
-
-            <div style="margin-top:12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Telegram WebApp SDK</div>
-            <div class="copy-block"><button class="copy-btn" onclick="copySdk()">Копіювати</button><span style="color:#555">&lt;!-- В &lt;head&gt; вставити: --&gt;</span>
-&lt;<span style="color:#6bcb77">script</span> src=<span style="color:#ffd93d">"https://telegram.org/js/telegram-web-app.js"</span>&gt;&lt;/<span style="color:#6bcb77">script</span>&gt;
-
-<span style="color:#555">// Ініціалізація:</span>
-<span style="color:#c77dff">const</span> tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand(); <span style="color:#555">// розгорнути на весь екран</span>
-
-<span style="color:#555">// Дані юзера:</span>
-<span style="color:#c77dff">const</span> user = tg.initDataUnsafe?.user;
-<span style="color:#555">// user.id, user.first_name, user.username</span></div>
-          </div>
-        </div>
       </div>
 
     </div>
@@ -628,6 +525,49 @@ function mkTask(t, i){
   return d;
 }
 
+
+// ===== Date navigation (selected day) =====
+let selectedDate = (() => {
+  const stored = localStorage.getItem('tm_selectedDate');
+  const d = stored ? new Date(stored) : new Date();
+  d.setHours(0,0,0,0);
+  return d;
+})();
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toISODate(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+
+function formatUA(d){
+  const wd = ['неділя','понеділок','вівторок','середа','четвер','пʼятниця','субота'][d.getDay()];
+  const months = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+  return wd.toUpperCase()+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear()+' р.';
+}
+
+function setHeaderDate(){
+  const el = document.getElementById('hdrDate');
+  if(el) el.textContent = formatUA(selectedDate);
+  const dp = document.getElementById('datePick');
+  if(dp) dp.value = toISODate(selectedDate);
+  localStorage.setItem('tm_selectedDate', selectedDate.toISOString());
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const prev = document.getElementById('prevDay');
+  const next = document.getElementById('nextDay');
+  const dp = document.getElementById('datePick');
+  const label = document.getElementById('hdrDate');
+
+  if(label){
+    label.style.cursor='pointer';
+    label.addEventListener('click', ()=> dp && dp.showPicker ? dp.showPicker() : dp && dp.click());
+  }
+  if(prev) prev.addEventListener('click', ()=>{ selectedDate.setDate(selectedDate.getDate()-1); setHeaderDate(); render(); });
+  if(next) next.addEventListener('click', ()=>{ selectedDate.setDate(selectedDate.getDate()+1); setHeaderDate(); render(); });
+  if(dp) dp.addEventListener('change', ()=>{ if(dp.value){ selectedDate = new Date(dp.value+'T00:00:00'); setHeaderDate(); render(); } });
+
+  setHeaderDate();
+});
+
 function render(){
   // TODAY
   const te = document.getElementById('todayList');
@@ -696,56 +636,25 @@ function toggleH(hi,di){
 }
 
 // TG
-function tgTab(id, btn){
-  document.querySelectorAll('.tg-tab').forEach(t=>t.classList.remove('a'));
-  document.querySelectorAll('.tg-sub').forEach(s=>s.classList.remove('a'));
-  btn.classList.add('a');
-  document.getElementById('sub-'+id).classList.add('a');
-}
 
-function connectBot(){
-  const token = document.getElementById('botToken').value.trim();
-  const chatId = document.getElementById('chatId').value.trim();
-  if(!token||!chatId){ showToast('⚠️ Заповни обидва поля'); return; }
-  S.tg={token,chatId,type:'bot'}; save();
-  document.getElementById('tgDot').classList.add('on');
-  document.getElementById('tgLabel').textContent='Бот підключено ✓';
-  showToast('✅ Токен збережено! Налаштуй webhook.');
-}
 
-function connectMini(){
-  const token = document.getElementById('miniToken').value.trim();
-  if(!token){ showToast('⚠️ Вставте Bot Token'); return; }
-  S.tg={token,type:'mini'}; save();
-  document.getElementById('tgDot').classList.add('on');
-  document.getElementById('tgLabel').textContent='Mini App ✓';
-  showToast('✅ Готово! Завантаж файл і налаштуй Mini App.');
-}
 
 if(S.tg){
-  document.getElementById('tgDot').classList.add('on');
-  document.getElementById('tgLabel').textContent = S.tg.type==='mini'?'Mini App ✓':'Бот підключено ✓';
 }
 
-function scrollToTg(){
-  document.getElementById('tgSection').scrollIntoView({behavior:'smooth',block:'start'});
-}
 
 // COPY
 const BOT_CODE = `const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 app.use(express.json());
-const TOKEN = process.env.BOT_TOKEN;
 let tasks = [];
 
 async function send(id, text) {
-  await fetch(\`https://api.telegram.org/bot\${TOKEN}/sendMessage\`,
   { method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({chat_id:id,text,parse_mode:'HTML'})});
 }
 
-app.post('/webhook', async (req, res) => {
   const msg = req.body.message;
   if(!msg) return res.json({ok:true});
   const [cmd,...a] = msg.text.split(' ');
@@ -766,10 +675,6 @@ app.post('/webhook', async (req, res) => {
 });
 app.listen(3000);`;
 
-function copyBot(){ navigator.clipboard.writeText(BOT_CODE).then(()=>showToast('📋 Код скопійовано!')); }
-function copySdk(){
-  navigator.clipboard.writeText('<script src="https://telegram.org/js/telegram-web-app.js"><\/script>').then(()=>showToast('📋 Скопійовано!'));
-}
 
 // CONFETTI
 function confetti(){
@@ -794,4 +699,4 @@ render();
 renderHabits();
 </script>
 </body>
-  </html>
+</html>
